@@ -1,0 +1,8 @@
+.env
+/.venv
+/venv
+__pycache__/
+*.pyc
+del practicode-2025-c9327eb0efc7.json
+.DS_Store
+.idea/
