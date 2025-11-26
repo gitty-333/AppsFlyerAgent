@@ -1,45 +1,54 @@
 from google.adk.agents import Agent
-from .bq import BQClient
+from .bq import BQClient # שינוי זה לשם המודול שבו נמצא BQClient
 
-# יצירת לקוח BigQuery
-bq = BQClient()
+# יצירת לקוח BigQuery - זוהי הנחת עבודה
+# ודא שמחלקה BQClient המקורית (שלא מכילה Mocking) זמינה לייבוא
+from .bq import BQClient 
+
 def run_bigquery(query: str):
     try:
-        df = bq.execute_query(query, 'adk_query').to_dataframe()
+        # 1. יצירת מופע הלקוח בתוך הפונקציה (פתרון הבעיה הגלובלית)
+        bq = BQClient() 
+        
+        # 2. קריאה לפונקציה האמיתית שלך
+        # המחלקה BQClient שלך מחזירה RowIterator, שצריך להמיר ל-DataFrame
+        result_iterator = bq.execute_query(query, 'adk_query')
+        df = result_iterator.to_dataframe()
 
         return {
             "status": "ok",
-            "result": df.to_markdown(index=False),  # needs tabulate
+            "result": df.to_markdown(index=False), 
             "message": None,
             "row_count": len(df),
-            "executed_sql": query,  # optional, super useful for debugging
+            "executed_sql": query,
         }
     except Exception as e:
         return {
             "status": "error",
             "result": None,
-            "message": f"BigQuery error: {e}",
+            "message": f"BigQuery execution error: {e}", 
             "executed_sql": query,
         }
-
-# --- האייגנט המתוקן ---
+# --- האייגנט המתוקן והמחייב ---
 query_executor_agent = Agent(
     name="query_executor_agent",
     model="gemini-2.0-flash",
-    description="Executes SQL and returns ONLY tool output.",
-instruction="""
-You receive the built_query JSON: {built_query}.
+    description="Executes SQL query using the run_bigquery tool.",
+    instruction="""
+You receive a JSON object which is the output of the previous agent.
+This output CONTAINS the result of the SQL builder under the key 'built_query'.
 
-If the "status" field in {built_query} is NOT "ok" (e.g., "needs_clarification" or "invalid_fields"), 
-your ONLY output MUST be the following JSON:
-{"status":"error","result":null,"message":"SQL cannot be executed because status is not ok."}
+Your ONLY task is to:
+1. **Locate** the 'built_query' object.
+2. **CRITICALLY CHECK** the 'status' field within 'built_query'. If it is NOT "ok", return the fixed error JSON: 
+   {"status":"error","result":null,"message":"SQL cannot be executed because status is not ok."}
 
-If the "status" field IS "ok":
-1. Extract the 'sql' string from the JSON.
-2. Call the run_bigquery tool with the extracted SQL string.
-3. Your output MUST be the EXACT, UNMODIFIED result from the tool call.
+3. **EXECUTE:** If the status IS "ok", extract the 'sql' string from 'built_query'.
+4. **IMMEDIATELY** call the run_bigquery tool with the extracted SQL string as the 'query' argument.
+5. Your final output MUST be the EXACT result of the tool call.
 """,
     tools=[run_bigquery],
     output_key="execution_result",
-    generate_content_config={"temperature": 0},
+    generate_content_config={"temperature": 0}, 
 )
+
