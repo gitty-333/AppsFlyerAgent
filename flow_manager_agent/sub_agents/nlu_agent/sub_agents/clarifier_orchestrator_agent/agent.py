@@ -53,7 +53,7 @@ clarifier_agent = LlmAgent(
 
         6) wide_query_resolution:
             "This is a very broad request. Please choose one of the following:
-            1. Limit the results to 5000 rows
+            1. Limit the results to 300 rows
             2. Provide a date range"
 
         7) entity_dimension:
