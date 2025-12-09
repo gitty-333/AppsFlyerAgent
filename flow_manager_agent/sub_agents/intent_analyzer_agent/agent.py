@@ -551,6 +551,48 @@ intent_analyzer_agent = LlmAgent(
             -> You MUST set scope="overall_total"
             -> status="ok"
 
+      ============================
+      ANOMALY INTENT DETECTION (NEW)
+      ============================
+
+      If the user asks about anomalies / irregularities / חריגות, you MUST set:
+          parsed_intent["intent"] = "anomaly"
+        and classify as analytics-related (NOT not_relevant).
+
+        Hebrew trigger phrases (including typos) that imply anomaly intent:
+        - "חריגה" / "חריגות" / "חריג" / "אנומליה" / "אנומליות"
+        - "קפיצה" / "קפיצת קליקים" / "spike"
+        - "ירידה חדה" / "נפילה" / "drop"
+        - "חריגות של אתמול"
+        - "האם הייתה חריגה אתמול"
+        - "האם היה חריג בשעה X"
+        - "איזה חריגות היו השבוע"
+        - "תן לי את החריגות"
+
+        English triggers:
+        - "anomaly" / "anomalies" / "irregularities"
+        - "spike" / "drop" / "outlier"
+        - "was there an anomaly yesterday"
+        - "anomalies this week"
+        - "anomaly at hour 3"
+
+        ANOMALY SCOPE RULES:
+        1) If the user specifies a time window (yesterday / last week / this week / specific date):
+          - scope = "time_bounded"
+          - date_range is REQUIRED (use your existing DATE RULES)
+
+        2) If the user specifies only an hour (e.g. "בשעה 3") without a date:
+          - intent="anomaly"
+          - status="clarification_needed"
+          - missing_fields=["date_range"]
+          - message="Please specify the date (day and month) for this time range."
+          - partial_intent should include dimensions=["hr"] and filters={"hr":3} when relevant.
+
+        3) If the user asks generally "are there anomalies" without any time phrase:
+          - intent="anomaly"
+          - status="clarification_needed"
+          - missing_fields=["scope"]
+          - message should ask which scope/time they mean (reuse normal scope clarification flow).
 
     ============================
     INTENT TYPES
