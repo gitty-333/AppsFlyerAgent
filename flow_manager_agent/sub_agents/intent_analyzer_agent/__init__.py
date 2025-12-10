@@ -1,1 +1,1 @@
-from .agent import intent_analyzer_agent
+from .agent import intent_analyzer_agent, BASE_NLU_SPEC
