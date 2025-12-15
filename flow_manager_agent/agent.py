@@ -8,6 +8,7 @@ from .utils.json_utils import clean_json as _clean_json
 # --- Sub Agents ---
 from .sub_agents.intent_analyzer_agent import intent_analyzer_agent, BASE_NLU_SPEC
 from .sub_agents.anomaly_agent import anomaly_agent   # ✅ NEW IMPORT
+from .sub_agents.react_visual_agent import react_visual_agent
 from .sub_agents.clarifier_orchestrator_agent import clarifier_agent
 from .sub_agents.protected_query_builder_agent import protected_query_builder_agent
 from .sub_agents.query_executor_agent import query_executor_agent
@@ -105,8 +106,12 @@ class RootAgent(BaseAgent):
             # ✅ ANOMALY FLOW (NEW)
             # ---------------------------
             if intent_type == "anomaly":
+                # מריץ BigQuery + מזהה אנומליות
                 logging.info("[RootAgent] === ANOMALY FLOW START ===")
                 async for event in anomaly_agent.run_async(context):
+                    yield event
+                # מריץ ויזואליזציה (קורא anomaly_result מה-state)
+                async for event in react_visual_agent.run_async(context):
                     yield event
                 logging.info("[RootAgent] === ANOMALY FLOW END ===")
                 return  # ✅ stop here, dont continue to SQL builder
