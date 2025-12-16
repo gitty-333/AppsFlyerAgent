@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from dotenv import load_dotenv
@@ -6,7 +7,9 @@ import logging
 import json
 from google.api_core.exceptions import Forbidden, NotFound, BadRequest
 
-load_dotenv()
+# טען את קובץ .env מהספרייה הנוכחית של הקובץ הזה
+dotenv_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path)
 
 PROJECT_ID = "practicode-2025"
 BQ_LOCATION = "EU"

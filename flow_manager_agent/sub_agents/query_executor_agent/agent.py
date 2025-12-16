@@ -1,11 +1,8 @@
 from google.adk.agents import Agent
 from google.adk.agents import LlmAgent
-from .bq import BQClient  # שינוי זה לשם המודול שבו נמצא BQClient
+from AppsFlyerAgent.bq import BQClient
 import logging
-logger = logging.getLogger(__name__)
-# יצירת לקוח BigQuery - זוהי הנחת עבודה
-# ודא שמחלקה BQClient המקורית (שלא מכילה Mocking) זמינה לייבוא
-from .bq import BQClient 
+logger = logging.getLogger(__name__) 
 
 
 def run_bigquery(query: str):

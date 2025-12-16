@@ -8,7 +8,7 @@ from google.adk.agents import BaseAgent
 from google.adk.events import Event
 from google.genai import types
 
-from bq import BQClient  # import מוחלט ויציב
+from AppsFlyerAgent.bq import BQClient
 
 logger = logging.getLogger(__name__)
 
@@ -61,11 +61,11 @@ class AnomalyAgent(BaseAgent):
             SPIKE_SQL, "anomaly_spike"
         ).to_dataframe()
 
-        drop_df = self._client.execute_query(
-            DROP_SQL, "anomaly_drop"
-        ).to_dataframe()
+        # drop_df = self._client.execute_query(
+        #     DROP_SQL, "anomaly_drop"
+        # ).to_dataframe()
 
-        return {"spike": spike_df, "drop": drop_df}
+        return {"spike": spike_df}
 
     def get_spike_anomalies(self):
         """
@@ -91,13 +91,13 @@ class AnomalyAgent(BaseAgent):
         anomalies = {}
 
         spike_df = results.get("spike")
-        drop_df = results.get("drop")
+        # drop_df = results.get("drop")
 
         if spike_df is not None and not spike_df.empty:
             anomalies["click_spike"] = spike_df
 
-        if drop_df is not None and not drop_df.empty:
-            anomalies["click_drop"] = drop_df
+        # if drop_df is not None and not drop_df.empty:
+        #     anomalies["click_drop"] = drop_df
 
         return anomalies
 
@@ -196,12 +196,8 @@ class AnomalyAgent(BaseAgent):
         # לשמירה ב-state – כדי שתוכלי לראות ב-debug / להשתמש אח"כ
         state["anomaly_result"] = res
 
-        # 1) הודעת סיכום קצרה
+        # החזרת התוצאות כטקסט + JSON לשימוש react_visual_agent
         yield _text_event(res["message"])
-
-        # 2) הדפסת ה-JSON למשתמש (יפה ומסודר)
-        pretty_json = json.dumps(res, ensure_ascii=False, indent=2)
-        yield _text_event(pretty_json)
 
         return
 

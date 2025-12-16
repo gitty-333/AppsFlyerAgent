@@ -298,7 +298,7 @@ BASE_NLU_SPEC = r"""
     → number_of_rows parsed from the question (default null if not clear).
     → date_range is not required by default for basic retrieval unless explicitly mentioned.
 
-
+    # אנומליה 
     ════════════════════════════════════════════
     ANOMALY INTENT RULES (NEW)
     ════════════════════════════════════════════
