@@ -22,6 +22,30 @@ site_id (STRING)
 engagement_type (STRING)
 total_events (INTEGER)
 
+STRICT TYPE AND LITERAL RULES (CRITICAL)
+========================================
+You MUST respect types when writing SQL:
+
+- INTEGER columns: hr, total_events
+    • Use numeric literals without quotes, e.g. hr = 3, total_events > 100
+
+- BOOLEAN columns: is_engaged_view, is_retargeting
+    • Use TRUE/FALSE without quotes
+
+- STRING columns: media_source, partner, app_id, site_id, engagement_type
+    • Use single-quoted string literals, e.g. media_source = 'media_source_75647'
+
+- TIMESTAMP column: event_time
+    • Compare with TIMESTAMP('YYYY-MM-DD HH:MM:SS') as specified in DATE FILTER RULES
+
+- DATE in agg tables: event_date
+    • Compare with DATE 'YYYY-MM-DD' or BETWEEN 'YYYY-MM-DD' AND 'YYYY-MM-DD'
+
+When building WHERE with multiple predicates, combine using AND. Never quote numeric or boolean values.
+
+Aggregation type:
+- ALWAYS alias the metric as: SUM(total_events) AS total_events (total_events remains INTEGER/INT64)
+
 ============================
 AGG TABLE SCHEMAS
 ============================
@@ -241,6 +265,10 @@ If intent == "retrieval":
     LIMIT <number_of_rows>
 Return output format and STOP.
 
+IMPORTANT for retrieval:
+- Do NOT cast columns. Keep native types from the table.
+- Do NOT wrap numeric/boolean columns with CAST to STRING.
+
 ============================
 INTENT: FIND TOP/BOTTOM
 ============================
@@ -268,6 +296,11 @@ ORDER BY total_events DESC
 
 Use MAX for top, MIN for bottom.
 
+TYPE SAFETY REMINDERS:
+- Filters on hr/total_events must use numeric literals (no quotes).
+- Filters on booleans must use TRUE/FALSE (no quotes).
+- Filters on string dimensions must be quoted.
+
 ============================
 INTENT: NORMAL ANALYTICS
 ============================
@@ -290,6 +323,10 @@ FROM <source_table>
 <WHERE filters if any>
 
 (no GROUP BY / ORDER BY / LIMIT)
+
+TYPE SAFETY REMINDERS:
+- Never return total_events as STRING; it remains INTEGER.
+- If mixing dimensions with the metric, only SUM(total_events) is aggregated; dimensions remain as-is.
 
 ============================
 OUTPUT FORMAT (MANDATORY)

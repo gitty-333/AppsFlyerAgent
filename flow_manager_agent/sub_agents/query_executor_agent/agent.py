@@ -1,36 +1,46 @@
 from google.adk.agents import Agent
 from google.adk.agents import LlmAgent
 from AppsFlyerAgent.bq import BQClient
+from AppsFlyerAgent.flow_manager_agent.utils.cache import CacheService, normalize_intent_key
+import pandas as pd
 import logging
 logger = logging.getLogger(__name__) 
 
 
 def run_bigquery(query: str):
-    logger.info("run_bigquery called")          # לוג כללי
-    logger.info("SQL to execute:\n%s", query) 
+    logger.info("run_bigquery called")
+    logger.info("SQL to execute:\n%s", query)
     try:
-        
-        # 1. יצירת מופע הלקוח בתוך הפונקציה (פתרון הבעיה הגלובלית)
-        bq = BQClient() 
-        
-        # 2. קריאה לפונקציה האמיתית שלך
-        # המחלקה BQClient שלך מחזירה RowIterator, שצריך להמיר ל-DataFrame
-        result_iterator = bq.execute_query(query, 'adk_query')
-        df = result_iterator.to_dataframe()
+        bq = BQClient()
+
+        # Runner that returns list[dict] rows
+        def _runner(sql: str):
+            it = bq.execute_query(sql, 'adk_query')
+            df = it.to_dataframe()
+            return df.to_dict(orient='records')
+
+        cs = CacheService()
+        intent_key = normalize_intent_key(sql=query)
+        rows, from_cache = cs.run_query_with_cache(sql=query, intent_key=intent_key, run_bigquery_fn=_runner)
+
+        # Build markdown result for downstream agents
+        df_out = pd.DataFrame(rows)
+        markdown = df_out.to_markdown(index=False) if not df_out.empty else ""
 
         return {
             "status": "ok",
-            "result": df.to_markdown(index=False), 
+            "result": markdown,
             "message": None,
-            "row_count": len(df),
+            "row_count": len(rows),
             "executed_sql": query,
+            "from_cache": from_cache,
         }
     except Exception as e:
-        logger.exception("BigQuery execution failed") 
+        logger.exception("BigQuery execution failed")
         return {
             "status": "error",
             "result": None,
-            "message": f"BigQuery execution error: {e}", 
+            "message": f"BigQuery execution error: {e}",
             "executed_sql": query,
         }
 
